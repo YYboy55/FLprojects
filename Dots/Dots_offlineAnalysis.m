@@ -123,6 +123,11 @@ t = mu/se;
 df = sum(~isnan(data.PDW))-length(parsedData.B2); 
 pval_ttest_slopes = 2*(1-tcdf(t,df)) % two-tailed
 
+% alternative slope test: indicator version:
+t = parsedData.B4(3)/parsedData.stats4.se(3);
+df = sum(~isnan(data.PDW))-length(parsedData.B4); 
+pval_ttest_slopes_alt = 2*(1-tcdf(t,df)) % two-tailed
+
 
 % t test on pHigh, corr vs err (is confidence higher on correct trials?)
 M = ~isnan(data.PDW) & data.correct==1;
@@ -169,8 +174,10 @@ if sum(isnan(data.RT))<0.8*length(data.RT) % arbitrary minimum proportion of RT 
     %                      % strength into units of momentary evidence
     % B = 20; % height of the bound, or threshold, for decision termination
     % Tnd = 225; %?
+    
 
     % or just take vals from sim
+    
     k = 0.3; % 'drift rate' or sensitivity term: a constant converting stimulus
              % strength into units of momentary evidence
     B = 25; % height of the bound, or threshold, for decision termination
