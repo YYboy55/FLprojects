@@ -25,6 +25,9 @@ function gfit = dots3DMP_fit_cgauss(data,mods,cohs,deltas,conftask,RTtask,D)
 % SJ 03-2023 added fmincon option (currently set within code, should be a
 % function argument)
 
+if ~isfield(data,'oneTargConf'); data.oneTargConf=zeros(size(data.choice)); end
+
+% define anonymous functions for fitting:
 
 
 %% define anonymous functions for fitting:
