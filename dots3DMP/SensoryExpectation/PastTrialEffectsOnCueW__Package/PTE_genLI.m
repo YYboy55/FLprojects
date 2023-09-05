@@ -12,7 +12,8 @@ function LI = PTE_genLI(datastruct, fieldnames, nback, fieldValues)
 
 numConditions = numel(fieldnames); % num columns in LI
 
-    % Initialize output variable 'LI'
+    % Initialize output variable 'LI' = to num trials in datastruct (use
+    % any generic field to initialize
     if contains(fieldnames{1}, '&')
         subfieldNames = strsplit(fieldnames{1}, '&');
         LI = false(numel(datastruct.(subfieldNames{1})), numConditions);
@@ -36,7 +37,7 @@ numConditions = numel(fieldnames); % num columns in LI
                 subfieldName = strtrim(subfieldNames{j}); % remove any excess spaces around fieldName after split
                 subfieldValue = fieldValue(j);
                 Nback = n(j);
-                subfieldLogicalVec = datastruct.(subfieldName)(((Nback+1):length(datastruct.(subfieldName)))-Nback) == subfieldValue; % True when subfield-specific condition is met, Nback shifts the whole vector back such that start postion is vector position 1
+                subfieldLogicalVec = datastruct.(subfieldName)(((Nback+1):length(datastruct.(subfieldName)))-Nback) == subfieldValue; % True when subfield-specific condition is met, -Nback shifts the whole vector back such that start postion is vector position 1, balances te +Nback to ensure first value in LogiVec is always 1, e.g. Nback=3 --> 3+1 = 4:end - 3 = 1:end-3
                 
                 % Pad the subfieldLogicalVec with false values for Nback rows
                 subfieldPadding = false(Nback, 1);
@@ -49,7 +50,7 @@ numConditions = numel(fieldnames); % num columns in LI
             end
         else % Field name does not contain '&', evaluate it directly
             logicalVec = datastruct.(fieldName)(((n+1):length(datastruct.(fieldName)))-n) == fieldValue; % True when field-specific condition is met
-            % Pad the logicalVec with false values for nback rows
+            % Pad the logicalVec with false values for first nback rows
             padding = false(n, 1);
             logicalVec = [padding; logicalVec];
         end

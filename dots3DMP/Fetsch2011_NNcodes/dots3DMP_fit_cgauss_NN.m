@@ -1,5 +1,9 @@
 function gfit = dots3DMP_fit_cgauss_NN(data,mods,cohs,deltas)
 
+if sum(unique(data.choice)) ==3
+    data.choice = data.choice - 1;
+end
+
 % define anonymous functions for fitting:
 
 cgauss = @(b,hdg) 1/2 * ( 1 + erf( (hdg-b(1))./(b(2)*sqrt(2)) ) );

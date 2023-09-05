@@ -1,9 +1,13 @@
-function [vesW, vesW_avg] = PTE_cueWcalc(data,LI,trPerDelta,boostraps) % xAxisPos,clr --> seperate plotting function?
-% xAxis and clr should be same length as size(LI,2)
-%   if not, either throw error AT START of function, or have default settings for both vars
+function [vesW, vesW_avg] = PTE_cueWcalc(data,LI,trPerDelta,boostraps)
 
-data.delta(data.delta==4) = 3;
-data.delta(data.delta==-4) = -3;
+addpath C:\Users\yhaile2\Documents\CODE\GitHubCodes\Fetschlab\FLprojects\dots3DMP\Fetsch2011_NNcodes % For use of fit_cgauss function
+
+deltas = unique(data.delta);
+if length(deltas) > 3
+    data.delta(data.delta<0) = -3;
+    data.delta(data.delta>0) = 3;
+    deltas = unique(data.delta);
+end
 mod = data.modality;
 coh = data.coherence;
 delta = data.delta;
@@ -11,29 +15,28 @@ delta = data.delta;
 
 mods = unique(data.modality);
 hdngs = unique(data.heading);
-cohs = unique(data.coherence);
-deltas = unique(data.delta);
+cohs = [min(data.coherence),max(data.coherence)];
+%     unique(data.coherence);
 
 % trTypes = [];  % trTypes(:,I) = [trTypes(:,I) randsample(LI(I) & deltas(d),trPerDelta)];
 
 trTypes = zeros(trPerDelta*length(deltas),size(LI,2));
-for b = 1:boostraps
-    for I = 1:size(LI,2)
+% Generate indexing variable to trials of interest
+for b = 1:boostraps % Each bootstrap iteration
+    for I = 1:size(LI,2) % Each trT
         for d = 1:length(deltas)
-            trTypes( (d-1)*trPerDelta+1:(d-1)*trPerDelta+trPerDelta, I) = randsample(find(delta(LI(:,I)) == deltas(d)),trPerDelta,true); % Create indices to trials of interest
+            trTypes((d-1)*trPerDelta+1:(d-1)*trPerDelta+trPerDelta, I) = randsample(find(LI(:,I) & delta == deltas(d)),trPerDelta,true); % Create indices to trials of interest, Each column of trtypes is a diff trt (aka. diff column of LI)
         end
     end
 
-    fn = fieldnames(data);
-    for da = 1:size(trTypes,2) % for each data struct,
-        for f = 1:length(fn)    % fill in each field
-             datas(da).(fn{f}) = data.(fn{f})(trTypes(:,da)); % Build one struct at a time, 'da', and one field at a time,fn{f}, results in 'datas' as an array of parallel structs. Is there a way to build all structs simultaneously? Such that one data.field(LI), operates column by column and stores appropriately each column in diff struct ...
+    for da = 1:size(trTypes,2) % da = num of trial types = num of columns in LI = number of data structs stored in 'datas'
+        fn = fieldnames(data);
+        for f = 1:length(fn)   % fill in each field
+            datas(da).(fn{f}) = data.(fn{f})(trTypes(:,da)); % Build one struct at a time, 'da', and one field at a time,fn{f}, results in 'datas' as an array of parallel structs. Is there a way to build all structs simultaneously? Such that one data.field(LI), operates column by column and stores appropriately each column in diff struct ...
         end
-    end
 
-    for da = 1:size(trTypes,2)
         gfit_datas(da) = dots3DMP_fit_cgauss_NN(datas(da),mods,cohs,deltas);
-        vesW{da}(b,:) = dots3DMP_wgts_thres_NN(gfit_datas(da).muPMF,gfit_datas(da).sigmaPMF,cohs,deltas); % Each cell is one trial type (one column of LI), each row in each cell is one bootstrap itiration 
+        vesW{da}(b,:) = dots3DMP_wgts_thres_NN(gfit_datas(da).muPMF,gfit_datas(da).sigmaPMF,cohs,deltas); % Each cell is one trial type (one column of LI), each row in each cell is one bootstrap itiration, each column a diff curr tr coherence
     end
 end
 
