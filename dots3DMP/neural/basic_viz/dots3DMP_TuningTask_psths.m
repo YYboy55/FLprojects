@@ -1,19 +1,23 @@
 
 clear;clc;close all
-addpath(genpath('/Users/stevenjerjian/Desktop/FetschLab/Analysis/codes/'))
+addpath(genpath('C:\Users\yhaile2\Documents\CODE_Projects\GitHubCodes\Fetschlab\FLutils'))
+addpath(genpath('C:\Users\yhaile2\Documents\CODE_Projects\GitHubCodes\Fetschlab\FLprojects\dots3DMP\neural'))
 
 % Load in the data
 
 subject   = 'lucio';
-dateRange = 20220512:20230411;
+% dateRange = 20230331:20230701;
+dateRange = 20231003:20231017;
 
 % area = 'MST';
 % dateRange = 20220512:20230131;
 
 
-dataPath = '/Users/stevenjerjian/Desktop/FetschLab/Analysis/data/lucio_neuro_datasets';
+dataPath = 'C:\Users\yhaile2\Documents\CODE_Projects\Data\Lucio\Neural\NeuralDataStructs_Lucio';
+% dataFileName = sprintf('%s_%d-%d_neuralData_clean.mat',subject,dateRange(1),dateRange(end));
 dataFileName = sprintf('%s_%d-%d_neuralData.mat',subject,dateRange(1),dateRange(end));
 load(fullfile(dataPath,dataFileName));
+% dataStruct = newDataStruct;
 
 % 20220512-20230131, remove 20220520
 % dataStruct(4) = [];
@@ -63,7 +67,7 @@ condlabels  = {'modality','coherenceInd','heading'}; % must be consistent order 
 useFullDur = 0;
 
 optsTR.smoothFR    = 1;
-optsTR.convKernel  = fspecial('average', [1 20]); 
+optsTR.convKernel  = fspecial2('average', [1 20]); 
 
 optsMS.smoothFR    = 0;
 
@@ -135,10 +139,10 @@ save(saveFileName);
 %% ====== plot mean responses during stimulus
 
 % select tuning or Task
-close all
+% close all
 
-% par = 'dots3DMPtuning';
-par = 'dots3DMP';
+par = 'dots3DMPtuning';
+% par = 'dots3DMP';
 
 switch par
     case 'dots3DMPtuning'
@@ -151,7 +155,6 @@ switch par
         condMat = condsTask;
         hdgVec  = hdgsTask;
 end
-
 iae = 1;
 auFR_formatted  = reshape(auMat.data.FRmean{iae},length(hdgVec),[],size(auMat.data.FRmean{iae},2));
 conds_formatted = reshape(condMat,length(hdgVec),[],size(condMat,2));
@@ -219,7 +222,7 @@ switch par
         hdgVec  = hdgsTask;
 end
 
-auMat.unittype(auMat.unittype==0) = 3;
+auMat.hdr.unitType(auMat.hdr.unitType==0) = 3;
 cluster_labels = dataStruct(1).data.(par).units.cluster_labels;
 cluster_labels{3} = 'un';
 
@@ -256,10 +259,10 @@ xlabel(sprintf('Heading angle [%s]',char(176)))
 
 %% ====== plot time resolved PSTH
 
-par = 'dots3DMPtuning';
+par = 'dots3DMP';
 % par = 'dots3DMP';
 
-u = 340;
+for u = 1:12 % specify unit(s)
 
 fsz = 20;
 
@@ -400,7 +403,7 @@ for c=1:size(ucond,1)
         hh.YLim = [0 my];
 
         if c==1 && iae==length(muFRs)
-            text(thisTmax+2,my*0.9,sprintf('%d-%d, %s',auMat.hdr.unitDate{u},auMat.hdr.unitID(u),dataStruct(1).data.(par).units.cluster_labels{auMat.hdr.unitType(u)}),...
+            text(thisTmax+2,my*0.9,sprintf('%d-%d, %s',datestr(auMat.hdr.unitDate{u}, 'yyyy-mm-dd'),auMat.hdr.unitID(u),dataStruct(1).data.(par).units.cluster_labels{auMat.hdr.unitType(u)}),...
                 'horizo','right','fontsize',fsz);
         end
         changeAxesFontSize(gca,fsz,fsz);
@@ -411,6 +414,7 @@ for c=1:size(ucond,1)
     %         hst = suptitle(sprintf('%d-%d, unit %d (%s)',unitDate(u),unitSet(u),unitID(u),dataStruct(1).data.(par).units.cluster_labels{unitType(u)}));
     %         hst.FontSize = 14;
 
+end
 end
 
 % plot schematic of heading vectors
@@ -427,7 +431,7 @@ end
 figure('position',[1000 100 600 600],'color','w')
 if max(hdgVec)==12
     sc = 3; len = 3;
-elseif max(hdgVec)==90
+elseif max(hdgVec)>20
     sc=1; len = 3;
 end
 

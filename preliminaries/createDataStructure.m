@@ -9,13 +9,14 @@
 data = struct;
 data.filename = {};
 data.subj = {};
-data.choice = []; % initialize this one field, you'll see why
+data.choice = []; % initialize as count value
+data.velProfile = []; % ^ same here
 
-fieldExcludes = {'leftEarly','tooSlow','fixFP','FPHeld','eyeXYs','corrLoopActive','goodtrial', ...
+fieldExcludes = {'leftEarly','tooSlow','fixFP','FPHeld','corrLoopActive','goodtrial','eyeXYs', 'velProfile' 'posTraj', ... % 'eyeXYs', 'velProfile' 'visTraj' %exchange these in and out as desired
                  'timeTargDisappears','probOfMemorySaccade','leftTargR','leftTargTheta', ...
                  'rightTargR','rightTargTheta','audioFeedback','textFeedback','rewardDelay','fixRewarded','amountRewardHighConf'};
 
-% now search localDir again for matching files and extract the desired variables from PDS
+% now search localDir again, for matching files, extracting the desired field values from PDS
 allFiles = dir(localDir);
 
 try if addNexonarDataToStruct, allNexFiles = dir([localDirNex '/*.mat']); end; catch, end
@@ -36,14 +37,16 @@ for d = 1:length(dateRange)
                 if exist('PDS','var')
                   
                     T = length(data.choice); % set trial counter to continue where left off (0, to start)
+                    stimCount = length(data.velProfile); % only stores 5 trials per session so needs diff idxing value across sessions
                     fprintf('\ncumulative trials processed = %d\n',T);
                     for t = 1:length(PDS.data) % loop over trials for this file,
                         if isfield(PDS.data{t}.behavior,'choice') % and save out the data, excluding trials with
                                                                   % missing data (choice is a good marker for this)
                             T = T+1; % increment trial counter
+                            stimCount = stimCount+1;
 
                             data.trialNum(T,1) = t;
-                            
+                             
                             data.filename{T,1} = allFiles(f).name(1:end-4);
                             dateStart = strfind(allFiles(f).name,'20');
                             if contains(subject,'human')
@@ -70,6 +73,37 @@ for d = 1:length(dateRange)
                             if isfield(PDS.data{t}.stimulus,'dotPos')
                                 data.dotPos{T,1} = PDS.data{t}.stimulus.dotPos;
                             end
+
+
+                            if ismember(t,[1:5]) % store ideal stim for first 5 trials of each session, .. TODO --> switch to store all trials from 1 session (easier indexing since each heading has unique position trace)
+                                if isfield(PDS.data{t}.stimulus,'visTraj') && ~any(strcmp(fieldExcludes,'visTraj'))
+                                    nonZeroCols = any(PDS.data{t}.stimulus.visTraj, 1);
+                                    posTraj = PDS.data{t}.stimulus.visTraj(:, nonZeroCols); % get rid of all 0 columns
+                                    data.posTraj{stimCount,1} = posTraj; % seems like this is unique for each heading angle... maybe save once per unique heading? Here or later on..?
+                                end
+                                if isfield(PDS.data{t}.stimulus,'velProfile') && ~any(strcmp(fieldExcludes,'velProfile'))
+                                    data.velProfile{stimCount,1} = PDS.data{t}.stimulus.velProfile; % this seems to be identical for each trial..
+                                end
+                            end
+
+                            if addEyeMovementToStruct % maybe for Nexonar too?
+                                behaviorTimeFields = fieldnames(PDS.data{t}.stimulus);
+                                behaviorTimeFields = behaviorTimeFields(startsWith(behaviorTimeFields, 'time'));
+                                % include event times
+                                for F = 1:length(behaviorTimeFields)
+                                    data.(behaviorTimeFields{F})(T,1) = PDS.data{t}.stimulus.(behaviorTimeFields{F});
+                                end
+                                try data.timeConfTargAq = PDS.data{t}.postTarget.timeConfTargEntered; catch; end
+                                % high res eye pos
+                                try
+                                    data.ADCdata{T, 1} = PDS.data{t}.datapixx.adc.data;
+                                    dp_time = PDS.data{t}.datapixx.unique_trial_time(2);
+                                    data.ADCtime{T, 1} = PDS.data{t}.datapixx.adc.dataSampleTimes - dp_time;
+                                catch
+                                    data.ADCdata{T, 1} = NaN;
+                                    data.ADCtime{T, 1} = NaN;
+                                end
+                            end
                             
                             % reward variables
                             if saveRewardData
@@ -95,12 +129,16 @@ for d = 1:length(dateRange)
                             fnames = fieldnames(PDS.data{t}.behavior);
                             fnames(ismember(fnames,fieldExcludes)) = [];
                             for F = 1:length(fnames)
-                                % SJ 07-2020, correct defaults to logical but
-                                % then gives error for NaN - use double instead
-                                if strcmp(fnames{F},'correct'), data.correct(T,1) = 0; end
+                                if strcmp(fnames{F},'correct'), data.correct(T,1) = 0; end % initialize as double to avoid logical (which can't handle NaNs)
 %                                 eval(['data.' fnames{F} '(T,1) = PDS.data{t}.behavior.' fnames{F} ';']);
-                                data.(fnames{F})(T,1) = PDS.data{t}.behavior.(fnames{F});
+                                    data.(fnames{F})(T,1) = PDS.data{t}.behavior.(fnames{F});
 
+%                                   Below was low res 120Hz eyePos.. above datapix eyePos data preferred     
+%                                 if strcmp(fnames{F},'eyeXYs')  
+%                                     numValidFrames = length(PDS.data{t}.behavior.fixFP);
+%                                     data.(fnames{F}){T,1} = PDS.data{t}.behavior.(fnames{F})(:,1:numValidFrames);
+%                                 else
+%                                 end
                             end
                                                         
                             % noticed a couple extra things we need, not in either place -CF 02-2021

@@ -8,11 +8,13 @@ RTtask = 1;
 subject = 'lucio';
 paradigm = 'dots3DMP';
 % dateRange = 20210315:20210805; % RT
-dateRange = 20220512:20230504;
+dateRange = 20220512:20220514;
+% dateRange = 20230925:20240429;
 
 %%
 % folder = '/Users/chris/Documents/MATLAB/PLDAPS_data/';
-folder = '/Users/stevenjerjian/Desktop/FetschLab/PLDAPS_data/dataStructs/';
+folder = 'C:\Users\yhaile2\Documents\AcademicRelated\CODE_Projects\Data\Lucio\Behavior\ConcatBehavSessFiles\';
+outputFolder = 'C:\Users\yhaile2\Documents\AcademicRelated\CODE_Projects\Data\Lucio\Behavior\ConcatBehavSessFiles\Cleaned_final';
 
 file = [subject '_' num2str(dateRange(1)) '-' num2str(dateRange(end)) '.mat'];
 load([folder file], 'data');
@@ -61,6 +63,9 @@ removethese = isnan(data.choice) | isnan(data.RT) | isinf(data.RT) | isnan(data.
 removethese = removethese | ismember(data.filename,excludes_filename) | ismember(data.date,excludes_date);
 fnames = fieldnames(data);
 for F = 1:length(fnames)
+    if strcmp(fnames{F},'velProfile'), continue; end % since not saved every trial indexing is off
+    if strcmp(fnames{F},'visTraj'), continue; end % this is outdated can remove. Replaced by below name
+    if strcmp(fnames{F},'posTraj'), continue; end % since not saved every trial indexing is off
     eval(['data.' fnames{F} '(removethese) = [];']);
 end
 
@@ -169,7 +174,9 @@ end
 
 
 %% save it
-save(fullfile(folder,[file(1:end-4) '_clean.mat']),'data','nTrialsByDate','nTrialsByBlock');
+%Store files in subfolder of main data folder \CleanDataFiles_L
+% save(fullfile([folder '\CleanDataFiles_L'],[file(1:end-4) '_clean.mat']),'data','nTrialsByDate','nTrialsByBlock');
+save(fullfile(outputFolder,[file(1:end-4) '_clean.mat']),'data','nTrialsByDate','nTrialsByBlock');
 
 
 

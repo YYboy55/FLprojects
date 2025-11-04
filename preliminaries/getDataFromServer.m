@@ -31,7 +31,8 @@ end
 cmd = 'ifconfig en7 inet'; % check if on local MBI network or need VPN workaround
 [~,ifstuff] = system(cmd);
 if ~useVPN || any(strfind(ifstuff,'172.'))
-    cmd = ['ssh fetschlab@172.30.3.33 ls ' remoteDir]; % MBI machine
+    cmd = ['ssh -p 3333 fetschlab@172.30.3.33 ls ' remoteDir]; % MBI machine
+%     cmd = ['ssh fetschlab@172.30.3.40 ls ' remoteDir]; % YYY new IP test.. MBI machine 
 else
     cmd = ['ssh fetschlab@10.161.240.133 ls ' remoteDir]; % probably off campus, try proxy IP (requires VPN)
 end
@@ -54,7 +55,6 @@ for n = 1:length(newlines)
     dateStart = strfind(remoteFiles{n},'20');
     if isempty(dateStart); continue; end
     
-    
     if isoephys
         thisDate = remoteFiles{n}(dateStart(1):dateStart(1)+9); % dateStart(1) just in case '20' appears in a timestamp
         thisDate([5 8]) = []; % OpenEphys dates are always yyyy-mm-dd, so remove the dashes
@@ -75,12 +75,13 @@ for n = 1:length(newlines)
         if ~contains(localFileList,remoteFiles{n}) || overwriteLocalFiles % always copy if overwrite option selected
             if useSCP
                 if ~useVPN || any(strfind(ifstuff,'172.'))
-                    cmd = ['scp -r fetschlab@172.30.3.33:' remoteDir remoteFiles{n} ' ' localDir]; % MBI machine
+                    cmd = ['scp -r -P 3333 fetschlab@172.30.3.33:' remoteDir remoteFiles{n} ' ' localDir]; % MBI machine
                 else
-                    cmd = ['scp -r fetschlab@10.161.240.133:' remoteDir remoteFiles{n} ' ' localDir]; % probably off campus, try proxy IP (requires VPN)
+                    cmd = ['scp -r -P 3333 fetschlab@10.161.240.133:' remoteDir remoteFiles{n} ' ' localDir]; % probably off campus, try proxy IP (requires VPN)
                 end
                 system(cmd,'-echo');
             else
+                fprintf('loading PDS file from server: %s\n', thisDate)
                 load([mountDir remoteFiles{n}]);
             end
             % now clean it up and re-save
@@ -103,4 +104,4 @@ for n = 1:length(newlines)
     end
 end
 
-disp('done.');
+disp('PDS file cleaned.');

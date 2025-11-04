@@ -1,4 +1,6 @@
 function [nsEvents] = nsEventConditions(nsEvents,PDS,par)
+storeEyePos = true;
+
 % [nsEvents] = NSEVENTCONDITIONS(nsEvents,PDS,PAR)
 %
 % pulls in useful trial info from relevant PLDAPS file into nsEvent struct
@@ -58,7 +60,7 @@ try nsEvents.Events = rmfield(nsEvents.Events,'breakfix'); catch; end
 % end
 
 % seems like VesMapping events didn't have stimOff_all, so if VesMapping is
-% done at the end the vector was the wrong length, so assign empties
+% done at the end the vector was the wrong length, so assign empties when vesMapping last par (parnum==4)
 % 02-22-2023
 if nsEvents.pldaps.parNum(end)==4
     nsEvents.Events.stimOff_all(end+1:length(nsEvents.Events.stimOn_all)) = {[]};
@@ -71,9 +73,13 @@ for c = 1:length(empty_inds)
 end
 
 %%
+% if 20220526 % ... no date filed.. could use hdr specific character positions on filename..
+if strcmp(par,'rfmapping')
+    matchTrials(end) = [];
+end
 fnamesC = fieldnames(nsEvents.Events);
 for f = 1:length(fnamesC)
-    nsEvents.Events.(fnamesC{f}) = nsEvents.Events.(fnamesC{f})(matchTrials);
+    nsEvents.Events.(fnamesC{f}) = nsEvents.Events.(fnamesC{f})(matchTrials); % apply matchTrials (curr PDS file)
 end
 fnamesC = fieldnames(nsEvents.pldaps);
 for f = 1:length(fnamesC)
@@ -101,9 +107,6 @@ PDSconditions = PDSconditions(matchTrials2);
 PDSdata = PDSdata(matchTrials2);
 
 %% 
-
-
-
 % refactor trial data from individual cells into matrix for easier insertion into nsEvents
 % should be fixed across trials within a paradigm
 fnamesC = fieldnames(PDS.conditions{1}.stimulus);
@@ -120,11 +123,24 @@ for t = 1:length(PDSconditions)
         end
     end
     
-    % datapixx time is what is sent to Ripple
-    PDStrstart(t) = PDSdata{t}.datapixx.unique_trial_time(1);
+    PDStrstart(t) = PDSdata{t}.datapixx.unique_trial_time(1);     % datapixx time is what is sent to Ripple
     
-    nsEvents.Events.goodtrial(t) = PDSdata{t}.behavior.goodtrial;
-    
+    % optionally add eyePos to nsEvents
+    if storeEyePos
+        try
+            eyePosTrstart = PDSdata{t}.datapixx.unique_trial_time(2);
+            eyePosTime = PDS.data{t}.datapixx.adc.dataSampleTimes - eyePosTrstart;
+
+            nsEvents.Events.eyePosXY{t} = PDSdata{t}.datapixx.adc.data;
+            nsEvents.Events.eyePosTime{t} = eyePosTime;
+        catch
+            nsEvents.Events.eyePosXY = nan;
+            nsEvents.Events.eyePosTime = nan;
+            disp('EyePos data not available, storing as NaN')
+        end
+    end
+
+    nsEvents.Events.goodtrial(t) = PDSdata{t}.behavior.goodtrial;    
     % SJ added 08-23-2022
     if strcmp(nsEvents.pldaps.parName{t},'dots3DMP')
         nsEvents.Events.oneTargChoice(t) = PDSdata{t}.behavior.oneTargChoice;

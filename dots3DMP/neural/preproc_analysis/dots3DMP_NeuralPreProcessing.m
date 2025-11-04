@@ -55,6 +55,11 @@
 
 clear;clc;close all
 
+% addpath(genpath('C:\Users\yhaile2\Documents\AcademicRelated\CODE_Projects\GitHubCodes\Fetschlab\FLprojects\preliminaries'))
+addpath(genpath('C:\Users\yhaile2\Documents\AcademicRelated\CODE_Projects\GitHubCodes\Fetschlab\FLprojects\dots3DMP\neural\preproc_analysis'))
+% Excel recording info sheet file req
+% located --> C:\Users\yhaile2\Documents\CODE_Projects\MATLAB\3DMP\PrelimDataFileProcessing\NeuralPreProcessing\RecSessionInfo.xlsx
+
 %% USER INPUTS
 
 clear;clc
@@ -62,12 +67,13 @@ clear;clc
 paradigms = {'dots3DMPtuning','dots3DMP','RFMapping','VesMapping'};
 
 subject = 'lucio';
-dateRange = 20220512:20230602;
+% dateRange = 20220520:20231017; % 20230331:20230701;
+dateRange = [20230330]; % 20231219];
 
 keepMU = 1;           % include all SU and MU, by default, do it, can always remove them later
 useSCP = 1; 
 useVPN = 0;
-overwriteLocalFiles = 0; % set to 1 to always use the server copy
+overwriteLocalFiles = 1; % set to 1 to always use the server copy
 % overwriteEventSets = 0; % obsolete for now, to be removed
 
 
@@ -86,22 +92,23 @@ end
 % remoteDir = ['/var/services/homes/fetschlab/data/' subject '/'];
 % getDataFromServer;
 
-mountDir  = ['/Volumes/homes/fetschlab/data/' subject '/'];    
-PDSdir = mountDir; % reassign for later
-
-localDir = ['/Users/stevenjerjian/Desktop/FetschLab/Analysis/data/' subject '_neuro/'];
+% mountDir  = ['/Volumes/homes/fetschlab/data/' subject '/'];    
+PDSdir  = ['Z:/fetschlab/data/' subject '/']; % could make this a local PDSdir if know PDS files are available there
+localDir = 'C:\Users\yhaile2\Documents\AcademicRelated\CODE_Projects\Data\Lucio\Neural\SessionInfoFiles_from_GetData'; % rippleEvents and info file locations
 remoteDir = ['/var/services/homes/fetschlab/data/' subject '/' subject '_neuro/'];
-mountDir  = ['/Volumes/homes/fetschlab/data/' subject '/' subject '_neuro/'];
+% mountDir  = ['/Volumes/homes/fetschlab/data/' subject '/' subject '_neuro/'];
+mountDir = ['Z:/fetschlab/data/' subject '/' subject '_neuro/']; % path to neural session folders
 
 %% grab the task events and info files
 % this time we will locally download these (_RippleEvents and info files)
 
-getNeuralEventsInfo; 
-
+getNeuralEventsInfo;
 
 %% create the dataStruct
-
-createSessionData;   
+useKS = false; % true will load kilosort sp struct and associated cluster info, false will generate a behavior only dataStruct, implying a non-kilosort pipeline is being used (e.g. MUA, mkSort) which will load in spike data later
+storeLFP = false; % include LFP data in neural dataStruct (when available), applied in createSessionData
+storeEyePos = true; % applied in (nsEventsConditions subfunction)
+createSessionData;
 
 %% create one .mat file containing concatenated events from all paradigms for a given set
 

@@ -15,8 +15,10 @@ clear; clc; close all
 % compare RT profiles in ves and comb split by heading and coherence
 
 %% select subject, load the data
+addpath(genpath('C:\Users\yhaile2\Documents\CODE_Projects\GitHubCodes\Fetschlab\FLprojects\dots3DMP\behavior_simple_plots'))
+addpath(genpath('C:\Users\yhaile2\Documents\CODE_Projects\GitHubCodes\Fetschlab\preFLprojects\ThreeDMP\ThreeDMP_behavior\3DMP_functions'))
 
-datapath = '/Users/stevenjerjian/Desktop/FetschLab/PLDAPS_data/dataStructs';
+datapath = 'C:\Users\yhaile2\Documents\CODE_Projects\Data\Lucio\Behavior\3DMP\CleanDataFiles_L\';
 subject = 'lucio';
 export_figs = 0;
 
@@ -26,6 +28,26 @@ conftask = 2;
 RTtask   = 1;
 
 data = dots3DMP_loadBehaviorData(subject,datapath,conftask,RTtask);
+
+allmodsOnly = 1; % Flag whether you want allmods block data only or not
+
+if allmodsOnly
+    % Recreate datastruct, selecting only certain trials
+    % select data trials from only certain block type
+    allmodsTrIndex = blockTypeIndex(data,[1;2;3]);
+    % Initialize new struct
+    new_data = struct();
+    fields = fieldnames(data); % list fieldnames
+    % Loop over each field and assign only selected trials to new data struct
+    for i = 1:numel(fields)
+        % Get the field values for the desired rows
+        field_values = data.(fields{i})(allmodsTrIndex, :);
+        % Assign the field values to the new struct
+        new_data.(fields{i}) = field_values;
+    end
+    data = new_data;
+end
+
 RTlims = [0.25 2.25];
 
 if ~isfield(data,'oneTargConf')
@@ -68,12 +90,14 @@ deltas = 0;
 hdgs   = unique(data.heading);
 
 %% basic parsing and plot of logistic fits
-
+mods =[1 2 3];
 % means per condition, logistic fits
 parsedData = dots3DMP_parseData(data,mods,cohs,deltas,hdgs,conftask,RTtask); 
 dots3DMP_plots(parsedData,mods,cohs,deltas,hdgs,conftask,RTtask)
 
 %% gaussian fits and plots
+addpath(genpath('C:\Users\yhaile2\Documents\CODE_Projects\GitHubCodes\Fetschlab\FLutils'));
+
 gfit = dots3DMP_fit_cgauss(data,mods,cohs,deltas,conftask,RTtask); 
 
 % separate subplots for each coh, with all mods on same subplot
@@ -87,7 +111,7 @@ end
 
 % or separate subplots for each mod/delta, and all cohs on same subplot -
 % needs work to look nice if it's going to be used publicly
-% dots3DMP_plots_cgauss_byModDelta(gfit,parsedData,mods,cohs,deltas,hdgs,conftask,RTtask)
+dots3DMP_plots_cgauss_byModDelta(gfit,parsedData,mods,cohs,deltas,hdgs,conftask,RTtask)
 
 %% psychophysical cue weights
 % assume wvis always = 1-wves

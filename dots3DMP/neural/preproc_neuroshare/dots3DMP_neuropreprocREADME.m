@@ -45,7 +45,7 @@ coded as the index in condition list, rather than the actual value. Offline reco
 value is done using nsEventConditions.m during post-processing (taken care
 of in 3b.)
 
-- for online window discriminated spikes (if any), nsEvents will contain a spkData field with
+- for online 'window discriminated' sorted spikes (if any), nsEvents will contain a spkData field with
 spike timing and cluster information (if chanInterest field in info is not empty)
 
 - for offline alignment purposes (if multiple Trellis recordings were made at the same depth i.e. in the same set/group), nsEvents will contain a field called

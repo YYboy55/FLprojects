@@ -13,7 +13,7 @@
 
 %% decide which files to load
 
-paradigm = 'dots3DMP';
+% paradigm = 'dots3DMP';
 today    = str2double(datestr(now,'yyyymmdd'));
 
 subject = 'lucio';

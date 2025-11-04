@@ -22,7 +22,8 @@ switch subject
 
     case 'lucio'
 %         filename = 'lucio_20220301-20221006_clean.mat'; % recent lucio data, PDW + RT (SfN 2022)
-        filename = 'lucio_20220301-20230303_clean.mat'; 
+        filename = 'lucio_20230925-20240429_clean.mat'; 
+%         20220301-20230303 % Steven sfn poster SD dataset
 
 
     case 'zarya'

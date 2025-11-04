@@ -1,8 +1,4 @@
 function LI = PTE_genLI(datastruct, fieldnames, nback, fieldValues)
-% UPDATES TO MAKE
-%  Want to be more flexible in specifying more than == 1 fieldvalue
-% Can change so that fieldvalues is actually an index that includes indexed
-% values of the unique(fieldvalues) for designated field!
 
 % Description
 % Takes as Input a datastruct, a cell array of fieldnames, vector of nback values, cell array of field values
@@ -16,6 +12,13 @@ function LI = PTE_genLI(datastruct, fieldnames, nback, fieldValues)
 % This is done when the desired LI output is conditioned on the values in multiple fields.
 % Thus, you can see in the third cell of 'fieldValues' 2 values are given to associate with modality and PDW respectively.
 % 'nback' allows specification of whether you care about evaluating the data values on this trial (n=0) or past trials (n-1,2,3 etc.)
+
+% UPDATES TO MAKE
+%  Want to be more flexible in specifying more than == 1 fieldvalue
+% Can change so that fieldvalues is actually an index that includes indexed
+% values of the unique(fieldvalues) for designated field!
+
+% ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ %
 
 numConditions = numel(fieldnames); % num columns in LI
 

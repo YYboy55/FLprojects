@@ -1,22 +1,21 @@
 % choice-wager conditioned PSTHs
 
 clear;clc;close all
-addpath(genpath('/Users/stevenjerjian/Desktop/FetschLab/Analysis/codes/'))
+% addpath(genpath('/Users/stevenjerjian/Desktop/FetschLab/Analysis/codes/'))
+addpath(genpath('C:\Users\yhaile2\Documents\CODE_Projects\GitHubCodes\Fetschlab\FLprojects\dots3DMP\neural\basic_viz'))
 
 % Load in the data
 
 subject   = 'lucio';
-dateRange = 20220512:20230131;
+dateRange = 20230331:20230701;
 
-dataPath = '/Users/stevenjerjian/Desktop/FetschLab/Analysis/data/';
+% dataPath = '/Users/stevenjerjian/Desktop/FetschLab/Analysis/data/';
+dataPath = 'C:\Users\yhaile2\Documents\CODE_Projects\Data\Lucio\Neural\NeuralDataStructs_Lucio';
 dataFileName = sprintf('%s_%d-%d_neuralData.mat',subject,dateRange(1),dateRange(end));
 load(fullfile(dataPath,dataFileName));
 
 % 20220512-20230131, remove 20220520
-dataStruct(4) = [];
-
-
-load(fullfile(dataPath,dataFileName));
+% dataStruct(4) = [];
 
 % inputs to dots3DMP_NeuralStruct_runCleanUp
 parSelect  = {'dots3DMPtuning','dots3DMP'}; 
@@ -25,6 +24,8 @@ minTrs     = [5 10];
 dataStruct = dots3DMP_NeuralStruct_runCleanUp(dataStruct,parSelect,minRate,minTrs);
 
 %% get PSTHs for each neuron for each choice and wager outcome
+addpath(genpath('C:\Users\yhaile2\Documents\CODE_Projects\GitHubCodes\Fetschlab\FLutils'))
+addpath(genpath('C:\Users\yhaile2\Documents\CODE_Projects\GitHubCodes\Fetschlab\FLprojects\dots3DMP\neural'))
 
 % need to find a way to code option to include e.g. multiple headings, but
 % not separate by them for the conditions
@@ -32,8 +33,9 @@ dataStruct = dots3DMP_NeuralStruct_runCleanUp(dataStruct,parSelect,minRate,minTr
 % ALSO NEED simple way to plot only selected mods/cohs without having to
 % rerun this part
 
+
 optsTR.smoothFR    = 1;
-optsTR.convKernel  = fspecial('average', [1 20]); 
+optsTR.convKernel  = fspecial2('average', [1 20]);
 
 mods = [1 2 3];
 cohs = [1 2];
@@ -41,8 +43,7 @@ cohs = [1 2];
 par = 'dots3DMP';
 % hdgs = [-12 -6 -3 -1.5 0 1.5 3 6 12]; 
 hdgs = [0]; % just use zero heading!
-% or eventually, a few small headings, but need to subtract mean and
-% collapse
+% or eventually, a few small headings, but need to subtract mean and collapse
 
 [hdg,modality,coh,delta,nconds] = dots3DMP_create_trial_list(hdgs,mods,cohs,0,1,0);
 condsTask = [modality,coh,hdg]; 

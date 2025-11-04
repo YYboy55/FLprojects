@@ -14,7 +14,11 @@ function [nsData] = getdata_NS(completeFilePath, dataType, dataChannel)
                    
                    
 % Open the file and extract some basic information
-[ns_status, hFile] = ns_OpenFileSJ(completeFilePath, 'single'); 
+[ns_status, hFile] = ns_OpenFileSJ(completeFilePath, 'single');
+% if ns_status ~= 0 && ~strcmp(ns_status,'ns_OK')
+%     keyboard
+%     error('Failed to open ns2 file.');
+% end
 
 % Determine correct entityID for desired datastream
 switch dataType    
@@ -51,7 +55,7 @@ switch dataType
 end
 
 % Extract channel info
-[ns_RESULT, entityInfo] = ns_GetEntityInfo(hFile, entityID(end));
+[ns_RESULT, entityInfo] = ns_GetEntityInfo(hFile.FileInfo.FileID, entityID(end)); % end used to handle multiple output vals from 'Digital' (I think YYY)
 
 % Extract data
 switch dataType            

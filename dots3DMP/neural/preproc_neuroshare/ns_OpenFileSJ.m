@@ -97,7 +97,8 @@ ext = '.n*';
 % file name) then all files with the same file name are used in generating 
 % hFile. If there are 2 input arguments then the first must be a valid 
 % nsx/nev file and the second must be 'single' and only the entered file is
-% used in generating hFile. 
+% used in generating hFile.
+
 if      (nargin == 0) ...
     ||( (nargin == 1) && strcmpi(varargin{1}, 'single') )
 

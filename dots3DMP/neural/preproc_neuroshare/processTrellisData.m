@@ -83,7 +83,7 @@ end
 for f = 1:length(uFiles)
     try
 
-    % select all the valid PLDAPS files coming from the same trellis recording
+    % select all the valid PLDAPS files coming from the same trellis recording (same 'set')
     theseFiles = find(ic==f & ~isnan(info.pldaps_filetimes)');
     if isempty(theseFiles), continue, end
 
@@ -104,6 +104,9 @@ for f = 1:length(uFiles)
 
         for ch=1:length(info.chanlist)
             thisChan = info.chanlist(ch);
+
+            % -> good place to add LFP extraction?
+                % input file, curr set filepath, curr sessDate, 
 
             % online sorted spikes from chans of interest
             if isfield(info,'chanInterest')

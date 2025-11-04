@@ -19,7 +19,7 @@ else
     IPadd = 'fetschlab@10.161.240.133'; % probably off campus, try proxy IP (requires VPN)
 end
 
-% get file list from local dir
+% get file list from local dir, in case no need to download anew
 if ~exist(localDir,'dir')
     mkdir(localDir);
 end
@@ -34,11 +34,10 @@ else
 end
 
 % get folder list of recording sessions from remote dir
-cmd = ['ssh ' IPadd ' ls ' remoteDir];
+cmd = ['ssh -p 3333 ' IPadd ' ls ' remoteDir];
 [~,remoteFolderList] = system(cmd, '-echo');
 % [~,remoteFolderList] = system(cmd);
 if any(strfind(remoteFolderList,'timed out')); error(remoteFolderList); end
-
 
 % check each folder for a match to the desired date range, and download the RippleEvents and info files from the server
 newlines = strfind(remoteFolderList,newline);
@@ -47,21 +46,21 @@ m = 1; m2 = 1;
 sess = 0;
 for n = 1:length(newlines)
     if n==1
-        remoteFolders{n} = remoteFolderList(1:newlines(1)-1);
+        remoteFolders{n} = remoteFolderList(1:newlines(1)-1); 
     else
         remoteFolders{n} = remoteFolderList(newlines(n-1)+1:newlines(n)-1);
     end
     dateStart = strfind(remoteFolders{n},'20');
     if isempty(dateStart) || contains(remoteFolders{n},'Impedance'); continue; end
     
-    thisDate = remoteFolders{n}(dateStart(1):dateStart(1)+7); % dateStart(1) just in case '20' appears in a timestamp
+    thisDate = remoteFolders{n}(dateStart(1):dateStart(1)+7); % dateStart(1) ensures grab date not timestamp which occasionally might contain '20'
     
     if any(strfind(dateStr,thisDate))
         currentFolderList{m,1} = remoteFolders{n}; m=m+1;
         
-        cmd = ['ssh ' IPadd ' ls ' remoteDir remoteFolders{n}];
+        cmd = ['ssh -p 3333 ' IPadd ' ls ' remoteDir remoteFolders{n}];
         %         [~,thisFileList] = system(cmd, '-echo');
-        [~,thisFileList] = system(cmd);
+        [~,thisFileList] = system(cmd); % curr session files
         
         newlines2 = strfind(thisFileList,newline);
         
@@ -73,11 +72,13 @@ for n = 1:length(newlines)
                 matFiles{n2} = thisFileList(newlines2(n2-1)+1:newlines2(n2)-1);
             end
             [~,~,ext] = fileparts(matFiles{n2});
-            if ~strcmp(ext,'.mat');  continue; end
-            currentFileList{m2,1} = matFiles{n2}; m2=m2+1;
+            if ~strcmp(ext,'.mat');  continue; end % info and RippleEvents are only mat files in sess subfolder, 
+            currentFileList{m2,1} = matFiles{n2}; m2=m2+1; % the files will be loaded later, in 'createSessionData'
             
-            if ~contains(localFileList,matFiles{n2}) || overwriteLocalFiles % always copy if overwrite option selected
-                cmd = ['scp -r ' IPadd ':' remoteDir remoteFolders{n} '/' matFiles{n2} ' ' localDir];
+            if ~contains(localFileList,matFiles{n2}) || overwriteLocalFiles % always download if overwrite option selected
+                cmd = ['scp -r -P 3333 ' IPadd ':' remoteDir remoteFolders{n} '/' matFiles{n2} ' ' localDir]; % scp commands copying of file to localDir
+% %  GPT suggestion              cmd = ['ssh -p 3333 fetschlab@172.30.3.33 "cat ' remoteDir remoteFolders{n} '/' matFiles{n2} '" > "' localDir matFiles{n2} '"'];
+
                 system(cmd,'-echo');
 %                 system(cmd);
             else

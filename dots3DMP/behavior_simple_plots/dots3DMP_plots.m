@@ -32,7 +32,7 @@ for c = 1:length(cohs)
     end
     legend(h,lh(mods),'Location','northwest');
     xlabel('heading angle (deg)'); ylabel('P(right)');
-    try changeAxesFontSize(gca,20,20); catch; end
+    try changeAxesFontSize(gca,15,17); catch; end
     
     % CONFIDENCE
     if conftask
@@ -50,7 +50,7 @@ for c = 1:length(cohs)
     
     % RT
     if RTtask
-        subplot(1+double(conftask>0)+double(RTtask),length(cohs),c+length(cohs)*2); box off; hold on;
+        subplot(1+double(conftask>0)+double(RTtask),length(cohs),c+length(cohs)+double(conftask>0)); box off; hold on;
         for m = 1:length(mods)
             h(m) = errorbar(hdgs, squeeze(parsedData.RTmean(m,c,D,:)), squeeze(parsedData.RTse(m,c,D,:)), [clr{c}{mods(m)} '-'],'linewidth',1.5); hold on;
         end
@@ -106,7 +106,7 @@ for c = 1:length(cohs)
     end 
     
     if RTtask
-        subplot(1+double(conftask>0)+double(RTtask),length(cohs),c+length(cohs)*2); box off; hold on;
+        subplot(1+double(conftask>0)+double(RTtask),length(cohs),c+length(cohs)+double(conftask>0)); box off; hold on;
         for d = 1:length(deltas)
             h(d) = errorbar(hdgs, squeeze(parsedData.RTmean(3,c,d,:)), squeeze(parsedData.RTse(3,c,d,:)), [clr{c}{d} '-'], 'linewidth', 1.5); hold on;
         end

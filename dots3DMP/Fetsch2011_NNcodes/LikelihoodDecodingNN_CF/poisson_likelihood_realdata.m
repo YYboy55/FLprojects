@@ -51,7 +51,6 @@ end
 % title('Vestibular');
 % ylim([0 120]);
 
-
 L = prod(temp_L);
 % AAAAL = L'/sum(L');
 % figure(11); plot(hdg,AAAAL); hold on;

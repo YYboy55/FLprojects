@@ -41,7 +41,7 @@ function nsEvents = createEventStruct_dots3DMP_NS_multiPDS(filename,paradigms,pl
 
 %%
 
-completeFilePath = fullfile(filepath,filename);
+% completeFilePath = fullfile(filepath,filename);
 
 hdr.pldaps_filenames = pldaps_filenames;
 hdr.Ripple_filename = filename;

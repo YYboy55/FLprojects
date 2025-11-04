@@ -8,21 +8,22 @@
 
 % important toggles; most or all of these disk-space hogging data 
 % can be removed for simple behavioral analyses
-removeAnalogData = 1;
-removeTimingData = 1;
+removeAnalogData = ~addEyeMovementToStruct;
+removeTimingData = removeAnalogData; % timing events should be included for eyeMovement analysis
 
 if strcmp(subject,'human')
-    removeMotionTrackingData = 1; % will change this later
+    removeMotionTrackingData = 0; % Now trying to collect.. 12/11/2024
     removeDotPositionData = 1;
 else
-    removeMotionTrackingData = 0;
-    removeDotPositionData = 0;
+    removeMotionTrackingData = ~addMotionTrackingData;
+    removeDotPositionData = ~addDotPositionToStruct;
     generate3DDotPosition = 1;
 end
 if removeDotPositionData==1
     generate3DDotPosition=0;
 end
 
+tstart = tic;
 fprintf(['\ncleaning up ' remoteFiles{n} '...']);
 
 if useSCP
@@ -42,14 +43,9 @@ if generate3DDotPosition
             [dotX_3D,dotY_3D,dotZ_3D,dotSize] = generateDots3D_offline(PDS);   
         end
     catch
+        disp("offline dot generation did not work...")
     end
 end
-
-try PDS = rmfield(PDS,'initialParameters'); catch; end
-try PDS = rmfield(PDS,'initialParameterNames'); catch; end
-try PDS = rmfield(PDS,'initialParametersMerged'); catch; end
-try PDS = rmfield(PDS,'functionHandles'); catch; end
-try PDS = rmfield(PDS,'conditionNames'); catch; end
 
 for t = 1:length(PDS.data) % loop over trials for this file
     
@@ -69,8 +65,8 @@ for t = 1:length(PDS.data) % loop over trials for this file
         try PDS.data{t}.behavior = rmfield(PDS.data{t}.behavior,'eyeXYs'); catch; end
         try PDS.data{t}.stimulus = rmfield(PDS.data{t}.stimulus,'eyeXYs'); catch; end
     else
-        try PDS.data{t}.behavior.eyeXYs = PDS.data{t}.stimulus.eyeXYs; catch; end
-        try PDS.data{t}.stimulus = rmfield(PDS.data{t}.stimulus,'eyeXYs'); catch; end
+%         try PDS.data{t}.behavior.eyeXYs = PDS.data{t}.stimulus.eyeXYs; catch; end
+%         try PDS.data{t}.stimulus = rmfield(PDS.data{t}.stimulus,'eyeXYs'); catch; end
     end
     
     if removeTimingData
@@ -136,6 +132,8 @@ for t = 1:length(PDS.data) % loop over trials for this file
     try PDS.data{t}.behavior = renameStructField(PDS.data{t}.behavior,'oneTargTrial','oneTargChoice'); catch; end
     try PDS.data{t}.behavior = renameStructField(PDS.data{t}.behavior,'oneConfTargTrial','oneTargConf'); catch; end
     
+    try PDS.data{t}.stimulus.conftask = PDS.initialParameters{3}.behavior.confTask; catch; end
+
     try
         if PDS.conditions{t}.stimulus.modality==1 % don't need a bunch of nans for vestib trials, make it just one nan
             PDS.data{t}.stimulus.dotX_3D = NaN;
@@ -151,6 +149,16 @@ for t = 1:length(PDS.data) % loop over trials for this file
 
 end
 
+try PDS = rmfield(PDS,'initialParameters'); catch; end % using to get out confTask
+try PDS = rmfield(PDS,'initialParameterNames'); catch; end
+try PDS = rmfield(PDS,'initialParametersMerged'); catch; end
+try PDS = rmfield(PDS,'functionHandles'); catch; end
+try PDS = rmfield(PDS,'conditionNames'); catch; end
+
+
 save([localDir remoteFiles{n}],'PDS','-v7.3');
 fprintf(' done\n');
+telapsed = toc(tstart);
+fprintf(' %.2f\n', telapsed);
+
 

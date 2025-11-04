@@ -4,7 +4,7 @@
 % see dots3DMP_NeuralPreProcessing for explanation of dataStruct structure
 
 % RECORDING SET NOTES
-%
+% 
 % Successive recordings with the same putative units (i.e. at the same location) are concatenated where necessary, since Kilosort spike sorting on the combined data with kilosort 
 % is much preferred, rather than trying to reconcile cluster ids post-hoc.
 % The convention throughout the codebase is to refer to such 'combined' recordings as recording 'sets'.
@@ -35,7 +35,8 @@
 % this could also be achieved by a loop over info.probe, but might require
 % some refactoring. Works fine for now.
 
-sess_info = readtable('/Users/stevenjerjian/Desktop/FetschLab/Analysis/RecSessionInfo.xlsx', sheet = subject);
+% sess_info = readtable('/Users/stevenjerjian/Desktop/FetschLab/Analysis/RecSessionInfo.xlsx', sheet = subject);
+sess_info = readtable('C:\Users\yhaile2\Documents\AcademicRelated\CODE_Projects\MATLAB\3DMP\PrelimDataFileProcessing\NeuralPreProcessing\RecSessionInfo.xlsx', sheet = subject); %Excel sheet with template for info for fields of interest
 sess_info.Properties.VariableNames = lower(sess_info.Properties.VariableNames);
 sess_info.chs = table2cell(rowfun(@(x,y) x:y, sess_info(:,{'min_ch','max_ch'})));
 sess_info = sess_info(logical(sess_info.is_good),:);
@@ -44,7 +45,8 @@ sess_info = sess_info(logical(sess_info.is_good),:);
 dataStruct = table2struct(sess_info);
 
 %% main loop
-
+addpath(genpath('C:\Users\yhaile2\Documents\AcademicRelated\CODE_Projects\GitHubCodes\Fetschlab\FLprojects\dots3DMP\neural\preproc_analysis')) % Making sure 'loadKSdir' is on path
+addpath(genpath('C:\Users\yhaile2\Documents\AcademicRelated\CODE_Projects\GitHubCodes\Fetschlab\FLprojects\dots3DMP\neural\preproc_neuroshare')) % Making sure 'loadKSdir' is on path
 % loop over each 'date' in folder list, then over unique sets
 % each date/set is referenced against the sess_info sheet
 
@@ -54,19 +56,22 @@ tEvs   = {'trStart','fpOn','fixation','reward','stimOn','stimOff','saccOnset',..
 
 clus_labels = {'MU','SU','UN'};
 
-
 for n = 1:length(currentFolderList)
 %     disp(currentFolderList{n})
     if isempty(strfind(currentFolderList{n},'20')) || contains(currentFolderList{n},'Impedance'); continue; end
     
     clear info
-    load(fullfile(localDir,[subject currentFolderList{n} 'dots3DMP_info.mat']));
+%     load(fullfile(localDir,[subject currentFolderList{n} 'dots3DMP_info.mat'])); %trying to load in rec info sheet.. 
+%     infoSheetDir = 'Z:\fetschlab\data\lucio\lucio_neuro\'; % contains session folders
+%     infoSheetDir = mountDir; % 'Z:\fetschlab\data\lucio\lucio_neuro\'; % contains session folders
+
+    load(fullfile([mountDir currentFolderList{n}],[subject currentFolderList{n} 'dots3DMP_info.mat'])); % Now load curr sess info file
     fprintf('Adding data from %s, %d of %d\n',currentFolderList{n},n,length(currentFolderList))
     
     % we want 1 row in dataStruct for each unique 'recording set'
     [unique_sets,~,ic] = unique(info.rec_group);
     
-    for u=1:length(unique_sets)
+    for u=1:length(unique_sets) % u = current set
         clear sp
 
 %         sess = sess+1; % increment the row in dataStruct % old
@@ -77,28 +82,33 @@ for n = 1:length(currentFolderList)
             continue
         end
         
+        % neural sessFolder
         remoteDirSpikes = sprintf('/var/services/homes/fetschlab/data/%s/%s_neuro/%d/%s%d_%d/',subject,subject,info.date,subject,info.date,unique_sets(u));
-        mountDir = sprintf('/Volumes/homes/fetschlab/data/%s/%s_neuro/%d/%s%d_%d/',subject,subject,info.date,subject,info.date,unique_sets(u));
+%         mountDir = sprintf('/Volumes/homes/fetschlab/data/%s/%s_neuro/%d/%s%d_%d/',subject,subject,info.date,subject,info.date,unique_sets(u)); % for MAC ..? 
+        mountDir = sprintf('Z:/fetschlab/data/%s/%s_neuro/%d/%s%d_%d/',subject,subject,info.date,subject,info.date,unique_sets(u)); % rec set subfolder
 
         % if recording was single electrode, sorting was done with SI, so sub-folder is phy_WC
         if contains(info.probe_type{1},'Single')
-            mountDir = [mountDir 'phy_WC/']; 
+            mountDir = [mountDir 'phy_WC/'];
             continue % skip these regardless for now
         end
 
+        if useKS
+            try
+                disp(mountDir)
+                sp = loadKSdir(mountDir);
+            catch
+                sp.st = [];
+                error('dots3DMP:createSessionData:loadKSdir','Could not load kilosort sp struct for %d, set %d...Are you connected to the NAS?\n\n',info.date,unique_sets(u));
+            end
 
-        try
-            disp(mountDir)
-            sp = loadKSdir(mountDir);
-        catch
-            sp.st = [];
-            error('dots3DMP:createSessionData:loadKSdir','Could not load kilosort sp struct for %d, set %d...Are you connected to the NAS?\n\n',info.date,unique_sets(u));
-        end
-
-        try
-            unitInfo = readtable(fullfile(mountDir,'cluster_info.tsv'),'FileType','delimitedtext');
-        catch
-            error('dots3DMP:createSessionData:getUnitInfo','Could not get cluster info for this ks file..file has probably not been manually curated\n')
+            try
+                unitInfo = readtable(fullfile(mountDir,'cluster_info.tsv'),'FileType','delimitedtext');
+            catch
+                error('dots3DMP:createSessionData:getUnitInfo','Could not get cluster info for this ks file..file has probably not been manually curated\n')
+            end
+        else
+            sp.st = []; % leave empty
         end
 
         % old SJ 04/2023
@@ -106,17 +116,18 @@ for n = 1:length(currentFolderList)
 %         dataStruct(sess).info = info;
 %         dataStruct(sess).set = unique_sets(u);
         
-
         % loop over paradigms 
         % (NOTE that the logic here differs from how nsEvents is initially created on the experiment rig)
-        for par=1:length(paradigms)
+
+        %         paradigmsOtherThanRFMapping = find(~strcmp(paradigms,'RFMapping'));
+        for par=1:length(paradigms) % par = nonRFMapping
             
-            theseFiles = find((ic'==unique_sets(u)) & ismember(lower(info.par),lower(paradigms{par})) & (~isnan(info.pldaps_filetimes)));
+            theseFiles = find((ic'==unique_sets(u)) & ismember(lower(info.par),lower(paradigms{par})) & (~isnan(info.pldaps_filetimes))); % filetimes associated to curr set 'u'
             if isempty(theseFiles), continue, end
                         
-            % concatenate all the data and condition fields of PDS files for given paradigm which are marked as part of the same recording 'set'
+            % concatenate all the data and condition fields of PDS files, of current recording set 'u'
             clear allPDS
-            st = 1;
+            st = 1; % counts number of PDS files associated to curr recording set(num behav blocks)
             for pf=1:length(theseFiles)
                 clear PDS
                 if strcmp(info.par{theseFiles(pf)},'RFMapping')
@@ -124,9 +135,10 @@ for n = 1:length(currentFolderList)
                 end
                 PDSfilenames{pf} =  [info.subject num2str(info.date) info.par{theseFiles(pf)} num2str(info.pldaps_filetimes(theseFiles(pf))) '.mat'];
                 try load(fullfile(PDSdir,PDSfilenames{pf}),'PDS');
-                catch, fprintf('PDS file not found..are you connected to the NAS?%s\n',PDSfilenames{pf}); 
-                    keyboard
-                    return;
+                catch, fprintf('PDS file not found..are you connected to the NAS? %s\n',PDSfilenames{pf});
+                    pause; %keyboard
+                    theseFiles(pf) = [];
+                    continue; % return;
                 end
                 en = st-1+length(PDS.data);
                 allPDS.data(st:en)       = PDS.data;
@@ -135,7 +147,6 @@ for n = 1:length(currentFolderList)
             end
             
             % for each trellis file within a given set+paradigm, concatenate and store the events
-
             [unique_trellis_files,~,ii] = unique(info.trellis_filenums(theseFiles));
             thisParSpikes  = false(size(sp.st));
 
@@ -149,29 +160,33 @@ for n = 1:length(currentFolderList)
                 if strcmp(NSfilename, 'lucio20220719dots3DMP0008_RippleEvents.mat'), continue, end
 
                 try
-                    load(fullfile(localDir,NSfilename));
+                    load(fullfile(localDir,NSfilename)); % RippleEvents file (mainly for timestamps & now also LFP, 2025/06/02 -YYY)
                     fprintf('adding data from %s (%s)\n\n', NSfilename, paradigms{par})
                 catch
                     fprintf('Could not load %s, skipping...\n\n', NSfilename)
+                    keyboard;
                     continue
                 end
                 
-
-                % allPDS should now match nsEvents, so pull in relevant condition data from PLDAPS and sub-select trials from this paradigm
+                % allPDS should now match nsEvents, so pull in relevant condition data from PLDAPS and sub-select trials from this block file (which belongs to a specific par)
                 [thisParEvents]   = nsEventConditions(nsEvents,allPDS,lower(paradigms{par})); % SJ added 08-22-2022 oneTargChoice and Conf!
                 timeStampsShifted = thisParEvents.analogInfo.timeStampsShifted ./ double(thisParEvents.analogInfo.Fs);
 
                 % add all the fields in events to dataStruct
                 % if event field is a time, shift it as needed
                 nTr    = length(thisParEvents.Events.trStart);
-                fnames = fieldnames(thisParEvents.Events);         
+                fnames = fieldnames(thisParEvents.Events);
                 for f=1:length(fnames)
                     
                     if ismember(fnames{f},tEvs)
                         thisParEvents.(fnames{f}) = thisParEvents.Events.(fnames{f})  + timeStampsShifted(1); % SHIFT
                     end
                     for s = 1:length(sess)
-                        dataStruct(sess(s)).data.(paradigms{par}).events.(fnames{f})(1,currPos+1:currPos+nTr) = thisParEvents.Events.(fnames{f});
+                        if strcmp(fnames{f},'eyePosXY') || strcmp(fnames{f},'eyePosTime')
+                             dataStruct(sess(s)).data.(paradigms{par}).events.(fnames{f}) = thisParEvents.Events.(fnames{f});
+                        else
+                            dataStruct(sess(s)).data.(paradigms{par}).events.(fnames{f})(1,currPos+1:currPos+nTr) = thisParEvents.Events.(fnames{f});
+                        end
                     end
                 end
 
@@ -197,15 +212,21 @@ for n = 1:length(currentFolderList)
 
                     thisFileSpikes = (sp.st >= timeLims(1) & sp.st < timeLims(2));
                     thisParSpikes  = thisParSpikes | thisFileSpikes;
-
                 end
 
+                if storeLFP
+                    try
+                        dataStruct(sess(s)).data.LFP = lfpStruct; % for now simply store all LFP data in one place, if wish to split into behav paradigms use 'thisFileSpikes' as done above for sp.st, requires using lfpStruct.time
+                    catch ME
+                        warning('LFP data not found in %s: %s', currRippleEventsFile, ME.message);
+                        dataStruct(sess(s)).data.LFP = [];  % or skip assignment entirely
+                    end
+                end
             end
 
-            % save the units data, with relevant ch and depth information
 
             if isempty(sp.st), continue, end
-
+            % save the units data, with relevant ch and depth information
             keepUnits = ismember(unitInfo.cluster_id,sp.cids)';
             depth     = unitInfo.depth(keepUnits)';
             ch        = unitInfo.ch(keepUnits)';
@@ -270,11 +291,13 @@ for n = 1:length(currentFolderList)
             end
         end
         %}
-    end        
+    end
 end
 
 
 % SAVE IT!!
 file = [subject '_' num2str(dateRange(1)) '-' num2str(dateRange(end)) '_neuralData.mat'];
 disp('saving...');
-save([localDir(1:length(localDir)-length(subject)-7) file], 'dataStruct');
+% save([localDir(1:length(localDir)-length(subject)-7) file], 'dataStruct');
+% save([localDir file], 'dataStruct'); %YYY naming scheme update
+save(['C:\Users\yhaile2\Documents\AcademicRelated\CODE_Projects\Data\Lucio\Neural\NeuralDataStructs_Lucio\' file], 'dataStruct'); %YYY naming scheme update

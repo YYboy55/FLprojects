@@ -1,4 +1,4 @@
-function dataStruct_clean = dots3DMP_NeuralStruct_runCleanUp(dataStruct,parSelect,minRate,minTrs)
+function [dataStruct_clean, excludedSessions] = dots3DMP_NeuralStruct_runCleanUp(dataStruct,parSelect,minRate,minTrs)
 
 % fprintf('Cleaning up data, resaving\n')
 
@@ -9,7 +9,7 @@ function dataStruct_clean = dots3DMP_NeuralStruct_runCleanUp(dataStruct,parSelec
 
 % minRate - minimum global/coarse firing rate of the unit in spikes/s
 % across valid trials
-% minTrs - minimum number of trials per unique condition 
+% minTrs - match dims to parSelect, = minimum number of trials per unique trial condition (for given task type), 
 %       TODO - make sure minTrs works for mapping paradigms too
 
 if length(minTrs)==1
@@ -40,7 +40,7 @@ for s = 1:length(dataStruct)
         numTrials(par,1)   = length(events.trStart);
 
         % 01-2023 this didn't account for good vs bad trials!
-        if contains(parSelect{par},'dots3DMP')
+        if contains(parSelect{par},'dots3DMP') % dots3DMPtuning and task
             stimCondList = [events.heading; events.modality; events.coherence]';
         else
             stimCondList = [events.targetR; events.targetTheta; events.coherence; events.numDirs; events.apertureDiam; events.amplitude]';
@@ -75,7 +75,7 @@ for s = 1:length(dataStruct)
 
     numTrials       = repmat(numTrials,1,size(parUnits,2));
 
-    parSpikeRate = numSpikes ./ numTrials;
+    parSpikeRate = numSpikes ./ numTrials; % spikes per trial avg
 
     removeThese = any(parSpikeRate<minRate | ~enoughTrials,1);
 
@@ -96,7 +96,12 @@ for s = 1:length(dataStruct)
 end
 
 dataStruct_clean(removeEntireSession) = [];
+excludedSessions = sum(removeEntireSession);
+fprintf('%d sessions were filtered out\n', excludedSessions);
+
+
+
+% Following currently done in filter session wrapper
 % dataStruct = dataStruct_clean;
-% 
 % file = [subject '_' num2str(dateRange(1)) '-' num2str(dateRange(end)) '_neuralData_clean.mat'];
 % save([localDir(1:length(localDir)-length(subject)-7) file], 'dataStruct');
