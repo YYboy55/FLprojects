@@ -54,15 +54,28 @@
 % 3. fix processing of phy_WC folders given lack of unitInfo
 
 clear;clc;close all
+systName = 'deskY';
+% systName = 'lapY';
 
 % addpath(genpath('C:\Users\yhaile2\Documents\AcademicRelated\CODE_Projects\GitHubCodes\Fetschlab\FLprojects\preliminaries'))
-addpath(genpath('C:\Users\yhaile2\Documents\AcademicRelated\CODE_Projects\GitHubCodes\Fetschlab\FLprojects\dots3DMP\neural\preproc_analysis'))
+switch systName
+    case 'deskY'
+        overwriteLocalFiles = 0; % 
+        RecSheetInfo = '/home/ylab/Documents/monkeyDataHandling/RecSessionInfo.xlsx';
+        addpath('/home/ylab/GitHub Repositories/preFLprojects/ThreeDMP/Functions'); % directory matching function
+        addpath(genpath('/home/ylab/GitHub Repositories/FLprojects/dots3DMP/neural/preproc_analysis'));
+    case 'lapY'
+        overwriteLocalFiles = 1; % set to 1 to always use the server copy
+        RecSheetInfo = 'C:\Users\yhaile2\Documents\CODE_Projects\MATLAB\3DMP\PrelimDataFileProcessing\NeuralPreProcessing\RecSessionInfo.xlsx';
+        addpath('C:\Users\yhaile2\Documents\CODE_Projects\GitHub Repositories\preFLprojects\ThreeDMP\Functions'); % directory matching function
+        addpath(genpath('C:\Users\yhaile2\Documents\AcademicRelated\CODE_Projects\GitHubCodes\Fetschlab\FLprojects\dots3DMP\neural\preproc_analysis')); % processing scripts
+end
 % Excel recording info sheet file req
 % located --> C:\Users\yhaile2\Documents\CODE_Projects\MATLAB\3DMP\PrelimDataFileProcessing\NeuralPreProcessing\RecSessionInfo.xlsx
 
 %% USER INPUTS
 
-clear;clc
+% clear;clc
 
 paradigms = {'dots3DMPtuning','dots3DMP','RFMapping','VesMapping'};
 
@@ -71,9 +84,9 @@ subject = 'lucio';
 dateRange = [20230330]; % 20231219];
 
 keepMU = 1;           % include all SU and MU, by default, do it, can always remove them later
-useSCP = 1; 
+useSCP = 1; % is this even used anywhere?
 useVPN = 0;
-overwriteLocalFiles = 1; % set to 1 to always use the server copy
+% overwriteLocalFiles = 1; % set to 1 to always use the server copy
 % overwriteEventSets = 0; % obsolete for now, to be removed
 
 
@@ -93,11 +106,18 @@ end
 % getDataFromServer;
 
 % mountDir  = ['/Volumes/homes/fetschlab/data/' subject '/'];    
-PDSdir  = ['Z:/fetschlab/data/' subject '/']; % could make this a local PDSdir if know PDS files are available there
-localDir = 'C:\Users\yhaile2\Documents\AcademicRelated\CODE_Projects\Data\Lucio\Neural\SessionInfoFiles_from_GetData'; % rippleEvents and info file locations
-remoteDir = ['/var/services/homes/fetschlab/data/' subject '/' subject '_neuro/'];
-% mountDir  = ['/Volumes/homes/fetschlab/data/' subject '/' subject '_neuro/'];
-mountDir = ['Z:/fetschlab/data/' subject '/' subject '_neuro/']; % path to neural session folders
+% PDSdir  = ['Z:/fetschlab/data/' subject '/']; % could make this a local PDSdir if know PDS files are available there
+% localDir = 'C:\Users\yhaile2\Documents\AcademicRelated\CODE_Projects\Data\Lucio\Neural\SessionInfoFiles_from_GetData'; % rippleEvents and info file locations
+% remoteDir = ['/var/services/homes/fetschlab/data/' subject '/' subject '_neuro/'];
+% % mountDir  = ['/Volumes/homes/fetschlab/data/' subject '/' subject '_neuro/'];
+% mountDir = ['Z:/fetschlab/data/' subject '/' subject '_neuro/']; % path to neural session folders
+
+% Set directory paths
+dirs = setDirectories_gettingNeuralDataStruct(systName,subject);
+PDSdir = dirs.PDSdir;
+localDir = dirs.localDir;
+remoteDir = dirs.remoteDir;
+mountDir = dirs.mountDir;
 
 %% grab the task events and info files
 % this time we will locally download these (_RippleEvents and info files)

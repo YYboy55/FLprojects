@@ -36,7 +36,7 @@
 % some refactoring. Works fine for now.
 
 % sess_info = readtable('/Users/stevenjerjian/Desktop/FetschLab/Analysis/RecSessionInfo.xlsx', sheet = subject);
-sess_info = readtable('C:\Users\yhaile2\Documents\AcademicRelated\CODE_Projects\MATLAB\3DMP\PrelimDataFileProcessing\NeuralPreProcessing\RecSessionInfo.xlsx', sheet = subject); %Excel sheet with template for info for fields of interest
+sess_info = readtable(RecSheetInfo, sheet = subject); %Excel sheet with template for info for fields of interest
 sess_info.Properties.VariableNames = lower(sess_info.Properties.VariableNames);
 sess_info.chs = table2cell(rowfun(@(x,y) x:y, sess_info(:,{'min_ch','max_ch'})));
 sess_info = sess_info(logical(sess_info.is_good),:);
