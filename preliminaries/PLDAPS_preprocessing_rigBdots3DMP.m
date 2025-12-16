@@ -15,21 +15,24 @@
 clear all
 close all
 % addpath(genpath('/Users/stevenjerjian/Desktop/FetschLab/Analysis/codes/'))
-addpath(genpath('C:\Users\yhaile2\Documents\AcademicRelated\CODE_Projects\GitHubCodes\Fetschlab\FLprojects\preliminaries'))
+% addpath(genpath('C:\Users\yhaile2\Documents\AcademicRelated\CODE_Projects\GitHubCodes\Fetschlab\FLprojects\preliminaries'))
+addpath(genpath('/home/ylab/GitHub_Repositories/FLprojects/preliminaries'))
 
 
+%% Manual settings
+% Which machine running from?
+userComp = 'deskYYY';
 
-%% decide which files to load
-
+% which file are you loading?
 today    = str2double(datestr(now,'yyyymmdd'));
-
 subject = 'lucio';
 paradigm = 'dots3DMP'; % grab data for this task paradigm
 % paradigms = {'dots3DMPtuning','dots3DMP','RFMapping','VesMapping'};
 
+dateRange = 20240520;
 
 % dateRange = 20220512:today; % RT 20221215
-dateRange = 20220512:20220514; % testing store eyePos and Ideal mp vectors (visTraj-->now written as posTraj & velProfile)
+% dateRange = 20220512:20220514; % testing store eyePos and Ideal mp vectors (visTraj-->now written as posTraj & velProfile)
 % dateRange = 20230925:today; % RT 20221215
 % dateRange = 20200203:20200207;
 % dateRange = 20230501:today;
@@ -42,19 +45,28 @@ for d = 2:length(dateRange)
     dateStr = [dateStr newline num2str(dateRange(d))];
 end
 
-% localDir = ['/Users/stevenjerjian/Desktop/FetschLab/PLDAPS_data/' subject '/'];
-% localDir = ['/Users/chris/Documents/MATLAB/PLDAPS_data/' subject '/'];
-% localDir = ['C:\Users\yhaile2\Documents\CODE\MATLAB\3DMP_Zarya\Zarya_Behavior\3DMP_BehavData\'] ; % YYY %
-localDir = ['C:\Users\yhaile2\Documents\AcademicRelated\CODE_Projects\Data\Lucio\Behavior\3DMP\'] ; % YYY % <---- not using subject since folder name is Zarya not 'zarya' as used on server
+switch userComp
+    case 'lapYYY'
+        if strcmp(subject,'zarya')
+            localDir = 'C:\Users\yhaile2\Documents\CODE\MATLAB\3DMP_Zarya\Zarya_Behavior\3DMP_BehavData\' ; % YYY %
+        elseif strcmp(subject,'lucio')
+            localDir = 'C:\Users\yhaile2\Documents\AcademicRelated\CODE_Projects\Data\Lucio\Behavior\3DMP\' ; % YYY % <---- not using subject since folder name is Zarya not 'zarya' as used on server
+        end
+        outputPath = ['C:\Users\yhaile2\Documents\AcademicRelated\CODE_Projects\Data\' subject '\Behavior\ConcatBehavSessFiles']; % path to save output concatenated 'data' var to
+        mountDir = ['Z:\fetschlab\data\' subject '\'] ; % server data files %
+        remoteDir = ['/var/services/homes/fetschlab/data/' subject '/'];
+    case 'deskYYY'
+        localDir = ['/home/ylab/Desktop/monkeyDataFiles/' subject '/behavior/'];
+        outputPath = ['/home/ylab/Desktop/monkeyDataFiles/' subject '/behavior/concatBehavStruct'];
+        mountDir =  ['/mnt/fetschLabNAS/fetschlab/data/' subject '/'];%['afp://FetschLabNas.local/homes/fetschlab/data/' subject];
+        remoteDir = ['/mnt/fetschLabNAS/fetschlab/data/' subject '/'];  %['afp://FetschLabNas.local/homes/fetschlab/data/' subject];
+end
 
-remoteDir = ['/var/services/homes/fetschlab/data/' subject '/'];
-
-outputPath = ['C:\Users\yhaile2\Documents\AcademicRelated\CODE_Projects\Data\' subject '\Behavior\ConcatBehavSessFiles']; % path to save output concatenated 'data' var to
 % to load files directly from mounted homes Volume (be careful not to save
-% over to the original file!)
+% over to the original file!)`
 % mountDir  = ['/Volumes/homes/fetschlab/data/' subject '/'];
 
-mountDir = ['Z:\fetschlab\data\' subject '\'] ; % YYY %
+% mountDir = ['Z:\fetschlab\data\' subject '\'] ; % YYY %
 % mountDir = ['Z:\fetschlab\data\' subject '\Lucio_NasBehavFiles_Backup\'] ; % YYY % %ollld behav block files
 
 addNexonarDataToStruct = 0; % SJ 08-2021

@@ -74,17 +74,17 @@ for d = 1:length(dateRange)
                                 data.dotPos{T,1} = PDS.data{t}.stimulus.dotPos;
                             end
 
-
-                            if ismember(t,[1:5]) % store ideal stim for first 5 trials of each session, .. TODO --> switch to store all trials from 1 session (easier indexing since each heading has unique position trace)
-                                if isfield(PDS.data{t}.stimulus,'visTraj') && ~any(strcmp(fieldExcludes,'visTraj'))
-                                    nonZeroCols = any(PDS.data{t}.stimulus.visTraj, 1);
-                                    posTraj = PDS.data{t}.stimulus.visTraj(:, nonZeroCols); % get rid of all 0 columns
-                                    data.posTraj{stimCount,1} = posTraj; % seems like this is unique for each heading angle... maybe save once per unique heading? Here or later on..?
-                                end
-                                if isfield(PDS.data{t}.stimulus,'velProfile') && ~any(strcmp(fieldExcludes,'velProfile'))
-                                    data.velProfile{stimCount,1} = PDS.data{t}.stimulus.velProfile; % this seems to be identical for each trial..
-                                end
-                            end
+% rn kinda useless.. need for each unique heading (should be same for each mod?)
+                            % if ismember(t,[1:5]) % store ideal stim for first 5 trials of each session, .. TODO --> switch to store all trials from 1 session (easier indexing since each heading has unique position trace)
+                            %     if isfield(PDS.data{t}.stimulus,'visTraj') && ~any(strcmp(fieldExcludes,'visTraj'))
+                            %         nonZeroCols = any(PDS.data{t}.stimulus.visTraj, 1);
+                            %         posTraj = PDS.data{t}.stimulus.visTraj(:, nonZeroCols); % get rid of all 0 columns
+                            %         data.posTraj{stimCount,1} = posTraj; % seems like this is unique for each heading angle... maybe save once per unique heading? Here or later on..?
+                            %     end
+                            %     if isfield(PDS.data{t}.stimulus,'velProfile') && ~any(strcmp(fieldExcludes,'velProfile'))
+                            %         data.velProfile{stimCount,1} = PDS.data{t}.stimulus.velProfile; % this seems to be identical for each trial..
+                            %     end
+                            % end
 
                             if addEyeMovementToStruct % maybe for Nexonar too?
                                 behaviorTimeFields = fieldnames(PDS.data{t}.stimulus);
@@ -93,7 +93,7 @@ for d = 1:length(dateRange)
                                 for F = 1:length(behaviorTimeFields)
                                     data.(behaviorTimeFields{F})(T,1) = PDS.data{t}.stimulus.(behaviorTimeFields{F});
                                 end
-                                try data.timeConfTargAq = PDS.data{t}.postTarget.timeConfTargEntered; catch; end
+                                try data.timeConfTargAq(T,1) = PDS.data{t}.postTarget.timeConfTargEntered; catch; end
                                 % high res eye pos
                                 try
                                     data.ADCdata{T, 1} = PDS.data{t}.datapixx.adc.data;
@@ -133,7 +133,7 @@ for d = 1:length(dateRange)
 %                                 eval(['data.' fnames{F} '(T,1) = PDS.data{t}.behavior.' fnames{F} ';']);
                                     data.(fnames{F})(T,1) = PDS.data{t}.behavior.(fnames{F});
 
-%                                   Below was low res 120Hz eyePos.. above datapix eyePos data preferred     
+%                                   Below is low res 120Hz eyePos.. above datapix eyePos data preferred     
 %                                 if strcmp(fnames{F},'eyeXYs')  
 %                                     numValidFrames = length(PDS.data{t}.behavior.fixFP);
 %                                     data.(fnames{F}){T,1} = PDS.data{t}.behavior.(fnames{F})(:,1:numValidFrames);

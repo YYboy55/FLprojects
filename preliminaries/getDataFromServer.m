@@ -31,8 +31,13 @@ end
 cmd = 'ifconfig en7 inet'; % check if on local MBI network or need VPN workaround
 [~,ifstuff] = system(cmd);
 if ~useVPN || any(strfind(ifstuff,'172.'))
-    cmd = ['ssh -p 3333 fetschlab@172.30.3.33 ls ' remoteDir]; % MBI machine
-%     cmd = ['ssh fetschlab@172.30.3.40 ls ' remoteDir]; % YYY new IP test.. MBI machine 
+    switch userComp
+        case 'lapYYY'
+        cmd = ['ssh -p 3333 fetschlab@172.30.3.33 ls ' remoteDir]; % local MBI wifi
+        %     cmd = ['ssh fetschlab@172.30.3.40 ls ' remoteDir]; % YYY new IP test.. MBI machine
+        case 'deskYYY'
+        cmd = ['ls -1 ' remoteDir]; % MBI machine % no SSH needed since on ethernet
+    end
 else
     cmd = ['ssh fetschlab@10.161.240.133 ls ' remoteDir]; % probably off campus, try proxy IP (requires VPN)
 end
@@ -59,12 +64,13 @@ for n = 1:length(newlines)
         thisDate = remoteFiles{n}(dateStart(1):dateStart(1)+9); % dateStart(1) just in case '20' appears in a timestamp
         thisDate([5 8]) = []; % OpenEphys dates are always yyyy-mm-dd, so remove the dashes
     else
-        thisDate = remoteFiles{n}(dateStart(1):dateStart(1)+7); % dateStart(1) just in case '20' appears in a timestamp
+        thisDate = remoteFiles{n}(dateStart(1):dateStart(1)+7); % dateStart(1) just in case '20' appears in a timestamp, in addition to date year value
     end
     
     % SJ 06-2022 added this to distinguish dots3DMPtuning from dots3DMP
     % (and only get the files for the desired one)
-    parPos(2) = strfind(remoteFiles{n},'.')-5;
+    parNameEndIdx = strfind(remoteFiles{n},'.'); % deskYYY cmd outputs nameList with two per putative row..
+    parPos(2) = parNameEndIdx(1)-5;
     parPos(1) = dateStart(1)+8;
     par = remoteFiles{n}(parPos(1):parPos(2));
 
