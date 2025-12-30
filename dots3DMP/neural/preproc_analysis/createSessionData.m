@@ -85,25 +85,25 @@ for n = 1:length(currentFolderList)
         % neural sessFolder
         remoteDirSpikes = sprintf('/var/services/homes/fetschlab/data/%s/%s_neuro/%d/%s%d_%d/',subject,subject,info.date,subject,info.date,unique_sets(u));
 %         mountDir = sprintf('/Volumes/homes/fetschlab/data/%s/%s_neuro/%d/%s%d_%d/',subject,subject,info.date,subject,info.date,unique_sets(u)); % for MAC ..? 
-        mountDir = sprintf('Z:/fetschlab/data/%s/%s_neuro/%d/%s%d_%d/',subject,subject,info.date,subject,info.date,unique_sets(u)); % rec set subfolder
+        mountDirectory = sprintf([mountDir '/%d/%s%d_%d/'], info.date,subject,info.date,unique_sets(u)); % rec set subfolder
 
         % if recording was single electrode, sorting was done with SI, so sub-folder is phy_WC
         if contains(info.probe_type{1},'Single')
-            mountDir = [mountDir 'phy_WC/'];
+            mountDirectory = [mountDirectory 'phy_WC/'];
             continue % skip these regardless for now
         end
 
         if useKS
             try
-                disp(mountDir)
-                sp = loadKSdir(mountDir);
+                disp(mountDirectory)
+                sp = loadKSdir(mountDirectory);
             catch
                 sp.st = [];
                 error('dots3DMP:createSessionData:loadKSdir','Could not load kilosort sp struct for %d, set %d...Are you connected to the NAS?\n\n',info.date,unique_sets(u));
             end
 
             try
-                unitInfo = readtable(fullfile(mountDir,'cluster_info.tsv'),'FileType','delimitedtext');
+                unitInfo = readtable(fullfile(mountDirectory,'cluster_info.tsv'),'FileType','delimitedtext');
             catch
                 error('dots3DMP:createSessionData:getUnitInfo','Could not get cluster info for this ks file..file has probably not been manually curated\n')
             end
@@ -203,7 +203,6 @@ for n = 1:length(currentFolderList)
                 end
                 currPos = currPos+nTr; % update
 
-
                 if ~isempty(sp.st)
                     % mask sp.st for spikes which occured within this paradigm's timeframe (with a reasonable buffer on either
                     % side, e.g. 20secs). This is not fundamental, but saves storing the same set of spikes across all paradigms within each individual paradigm's field
@@ -300,4 +299,6 @@ file = [subject '_' num2str(dateRange(1)) '-' num2str(dateRange(end)) '_neuralDa
 disp('saving...');
 % save([localDir(1:length(localDir)-length(subject)-7) file], 'dataStruct');
 % save([localDir file], 'dataStruct'); %YYY naming scheme update
-save(['C:\Users\yhaile2\Documents\AcademicRelated\CODE_Projects\Data\Lucio\Neural\NeuralDataStructs_Lucio\' file], 'dataStruct'); %YYY naming scheme update
+
+save([outputDir file], 'dataStruct');
+disp('done');

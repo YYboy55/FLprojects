@@ -14,7 +14,7 @@
 cmd = 'ifconfig en7 inet'; % check if on local MBI network or need VPN workaround
 [~,ifstuff] = system(cmd);
 if ~useVPN || any(strfind(ifstuff,'172.'))
-    IPadd = 'fetschlab@172.30.3.33'; % MBI machine
+    IPadd = 'fetschlab@172.30.3.33'; % MBI network
 else
     IPadd = 'fetschlab@10.161.240.133'; % probably off campus, try proxy IP (requires VPN)
 end
@@ -34,7 +34,12 @@ else
 end
 
 % get folder list of recording sessions from remote dir
-cmd = ['ssh -p 3333 ' IPadd ' ls ' remoteDir];
+switch systName
+    case 'deskY'
+        cmd = ['ls -1 ' remoteDir];
+    case 'lapY'
+        cmd = ['ssh -p 3333 ' IPadd ' ls ' remoteDir];
+end
 [~,remoteFolderList] = system(cmd, '-echo');
 % [~,remoteFolderList] = system(cmd);
 if any(strfind(remoteFolderList,'timed out')); error(remoteFolderList); end
@@ -58,7 +63,12 @@ for n = 1:length(newlines)
     if any(strfind(dateStr,thisDate))
         currentFolderList{m,1} = remoteFolders{n}; m=m+1;
         
-        cmd = ['ssh -p 3333 ' IPadd ' ls ' remoteDir remoteFolders{n}];
+        switch systName
+            case 'deskY'
+                cmd = ['ls -1 ' remoteDir remoteFolders{n}];
+            case 'lapY'
+                cmd = ['ssh -p 3333 ' IPadd ' ls ' remoteDir remoteFolders{n}];
+        end
         %         [~,thisFileList] = system(cmd, '-echo');
         [~,thisFileList] = system(cmd); % curr session files
         
@@ -72,15 +82,17 @@ for n = 1:length(newlines)
                 matFiles{n2} = thisFileList(newlines2(n2-1)+1:newlines2(n2)-1);
             end
             [~,~,ext] = fileparts(matFiles{n2});
-            if ~strcmp(ext,'.mat');  continue; end % info and RippleEvents are only mat files in sess subfolder, 
+            if ~strcmp(ext,'.mat');  continue; end % info and RippleEvents are only '.mat' files in sess subfolder, 
             currentFileList{m2,1} = matFiles{n2}; m2=m2+1; % the files will be loaded later, in 'createSessionData'
             
             if ~contains(localFileList,matFiles{n2}) || overwriteLocalFiles % always download if overwrite option selected
-                cmd = ['scp -r -P 3333 ' IPadd ':' remoteDir remoteFolders{n} '/' matFiles{n2} ' ' localDir]; % scp commands copying of file to localDir
-% %  GPT suggestion              cmd = ['ssh -p 3333 fetschlab@172.30.3.33 "cat ' remoteDir remoteFolders{n} '/' matFiles{n2} '" > "' localDir matFiles{n2} '"'];
-
+                switch systName
+                    case 'deskY'
+                        cmd =['cp -r ' remoteDir remoteFolders{n} '/' matFiles{n2} ' ' localDir];
+                    case 'lapY'
+                        cmd = ['scp -r -P 3333 ' IPadd ':' remoteDir remoteFolders{n} '/' matFiles{n2} ' ' localDir]; % scp commands copying of file to localDir
+                end
                 system(cmd,'-echo');
-%                 system(cmd);
             else
                 disp([remoteFolders{n} '/' matFiles{n2} ' exists locally, not copied']);
             end
